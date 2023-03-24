@@ -1,6 +1,4 @@
 from tkinter import *
-import random
-import numpy as np
 
 from grid import Grid
 
@@ -13,47 +11,40 @@ def graphics():
     canvas.delete("all")
     for i in range(GRID_WIDTH):
         for j in range(GRID_HEIGHT):
-            if grid.cell(i, j) == 0:
-                canvas.create_rectangle(i*CELL_SIZE, j*CELL_SIZE, i*CELL_SIZE+CELL_SIZE, j*CELL_SIZE+CELL_SIZE, fill="black")   
-            elif grid.cell(i, j) == 1:
-                canvas.create_rectangle(i*CELL_SIZE, j*CELL_SIZE, i*CELL_SIZE+CELL_SIZE, j*CELL_SIZE+CELL_SIZE, fill="grey")
-    canvas.create_rectangle(grid.start[0]*CELL_SIZE, grid.start[1]*CELL_SIZE, grid.start[0]*CELL_SIZE+CELL_SIZE, grid.start[1]*CELL_SIZE+CELL_SIZE, fill="green")
-    canvas.create_rectangle(grid.end[0]*CELL_SIZE, grid.end[1]*CELL_SIZE, grid.end[0]*CELL_SIZE+CELL_SIZE, grid.end[1]*CELL_SIZE+CELL_SIZE, fill="red", outline="white")
+            if grid.cells[j][i].type == "obstacle":
+                canvas.create_rectangle(i*CELL_SIZE, j*CELL_SIZE, i*CELL_SIZE+CELL_SIZE, j*CELL_SIZE+CELL_SIZE, fill="grey", outline="grey")
+    for visited_cell in grid.visited_cells:
+        canvas.create_rectangle(visited_cell.x*CELL_SIZE, visited_cell.y*CELL_SIZE, visited_cell.x*CELL_SIZE+CELL_SIZE, visited_cell.y*CELL_SIZE+CELL_SIZE, fill="orange", outline="orange")
+    for cell in grid.path:
+        canvas.create_rectangle(cell[0]*CELL_SIZE, cell[1]*CELL_SIZE, cell[0]*CELL_SIZE+CELL_SIZE, cell[1]*CELL_SIZE+CELL_SIZE, fill="green", outline="green")
+    canvas.create_rectangle(grid.start[0]*CELL_SIZE, grid.start[1]*CELL_SIZE, grid.start[0]*CELL_SIZE+CELL_SIZE, grid.start[1]*CELL_SIZE+CELL_SIZE, fill="blue")
+    canvas.create_rectangle(grid.end[0]*CELL_SIZE, grid.end[1]*CELL_SIZE, grid.end[0]*CELL_SIZE+CELL_SIZE, grid.end[1]*CELL_SIZE+CELL_SIZE, fill="red", outline="red")
     window.update()
 
+def path_tracer(cell):
+    global grid
+    grid.path.append([cell.x, cell.y])
+    if cell.parent != None:
+        path_tracer(cell.parent)
+        graphics()
+
 def dijkstra(grid):
-    distances = np.full((GRID_WIDTH, GRID_HEIGHT), 10000)
-    distances[grid.start[1]][grid.start[0]] = 0
-
-    curr = grid.start
-
-    visited = np.full((GRID_WIDTH, GRID_HEIGHT), None)
-
-    visited[curr[1], curr[0]] = True
-    if grid.cell(curr[1], curr[0]) != 1:
-        grid.cell(curr[1], curr[0]).distance = 0
-
-    while True:
-        neighbours = grid.get_adj(curr[1], curr[0])
-
-        for neighbour in neighbours:
-            if grid.cell(neighbour[1], neighbour[0]) != 1:
-                if distances[neighbour[1]][neighbour[0]] > distances[curr[1]][curr[0]] + 1:
-                    distances[neighbour[1]][neighbour[0]] = distances[curr[1]][curr[0]] + 1
-                    grid.cell(neighbour[1], neighbour[0]).parent = curr
-                    grid.cell(neighbour[1], neighbour[0]).distance = distances[neighbour[1]][neighbour[0]]
-                    visited[neighbour[1]][neighbour[0]] = False
-        visited[curr[1], [curr[0]]] = True
+    global curr, end, found
+    for neighbor in grid.get_neighbors(curr.x, curr.y):
+        neighbor.distance = min(neighbor.distance, curr.distance+1)
+        neighbor.parent = curr
+    curr.visited = True
+    curr = grid.get_nearest()
+    grid.visited_cells.append(curr)
+    if grid.get_nearest() == grid.get_end():
+        found = True
+    else:
+        graphics()
             
-        curr = min(neighbours, key=lambda x: distances[x[1]][x[0]])
-            
-        
-
-
 def left_click(event):
     x = event.x//CELL_SIZE
     y = event.y//CELL_SIZE
-    grid.change_obstacle(x, y)
+    grid.set_obstacle(x, y)
     graphics()
 
 def right_click():
@@ -62,11 +53,17 @@ def right_click():
     graphics()
 
 def init_grid() -> Grid:
-    print("init")
     g = Grid(GRID_WIDTH, GRID_HEIGHT)
-    g.chage_start(random.randint(0, GRID_WIDTH-1), random.randint(0, GRID_HEIGHT-1))
-    g.change_end(random.randint(0, GRID_WIDTH-1), random.randint(0, GRID_HEIGHT-1))
     return g
+
+def solver():
+    global found
+    if not found:
+        dijkstra(grid)
+        window.after(1, solver)
+    else:
+        path_tracer(grid.get_end())
+    
 
 # Tkinter section.
 window = Tk()
@@ -80,10 +77,14 @@ window.update()
 #Bindings
 window.bind("<Button-1>", lambda e: left_click(e))
 window.bind("<Button-3>", lambda e: right_click())
-window.bind("<Return>", lambda e: dijkstra(grid))
+window.bind("<Return>", lambda e: solver())
 
 # variables
 grid = init_grid()
+curr = grid.get_start()
+end = grid.get_end()
+found = False
+
 graphics()
 
 window.mainloop()
