@@ -34,8 +34,8 @@ def dijkstra(grid):
         neighbor.distance = min(neighbor.distance, curr.distance+1)
         neighbor.parent = curr
     curr.visited = True
-    curr = grid.get_nearest()
     grid.visited_cells.append(curr)
+    curr = grid.get_nearest()
     if grid.get_nearest() == grid.get_end():
         found = True
     else:

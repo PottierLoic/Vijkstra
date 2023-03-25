@@ -15,12 +15,12 @@ struct Grid {
 		found bool
 }
 
-fn (grid Grid) get_start() []int {
-	return grid.start_cell
+fn (grid Grid) get_start() Cell {
+	return grid.cells[grid.start_cell[1]][grid.start_cell[0]]
 }
 
-fn (grid Grid) get_end() []int {
-	return grid.end_cell
+fn (grid Grid) get_end() Cell {
+	return grid.cells[grid.end_cell[1]][grid.end_cell[0]]
 }
 
 fn (grid Grid) get_cell(x int, y int) Cell {
@@ -28,7 +28,7 @@ fn (grid Grid) get_cell(x int, y int) Cell {
 }
 
 fn (mut grid Grid) set_obstacle(x int, y int) {
-	if [x, y] == grid.get_start() || [x, y] == grid.get_end() {
+	if [x, y] == grid.start_cell || [x, y] == grid.end_cell {
 		return
 	}
 	if grid.cells[y][x].cat == 'obstacle' {
@@ -104,6 +104,7 @@ fn init_grid(width int, height int) Grid {
 		}
 		cells << row
 	}
+	cells[start_cell[1]][start_cell[0]].distance = 0
 	curr := cells[start_cell[1]][start_cell[0]]
 	end := cells[end_cell[1]][end_cell[0]]
 

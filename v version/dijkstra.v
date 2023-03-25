@@ -31,6 +31,10 @@ fn (app App) display () {
 		app.gg.draw_rect_filled(visited.x * cell_size, visited.y * cell_size, cell_size, cell_size, gx.blue)
 	}
 
+	for path in app.grid.path {
+		app.gg.draw_rect_filled(path.x * cell_size, path.y * cell_size, cell_size, cell_size, gx.green)
+	}
+
 	app.gg.draw_rect_filled(app.grid.start_cell[0] * cell_size, app.grid.start_cell[1] * cell_size, cell_size, cell_size, gx.green)
 	app.gg.draw_rect_filled(app.grid.end_cell[0] * cell_size, app.grid.end_cell[1] * cell_size, cell_size, cell_size, gx.red)
 }
@@ -38,18 +42,20 @@ fn (app App) display () {
 fn (mut app App)solver(){
 	if app.grid.found != true {
 		dijkstra(app, mut app.grid)
-		print(app.grid.visited)
 		app.solver()
 	} else {
 		print('trouvé')
-		path_tracer(app.grid.end, mut app.grid)
+		path_tracer(app.grid.get_end(), mut app.grid)
+		app.display()
 	}
 }
 
 fn path_tracer(cell Cell, mut grid Grid) {
 	grid.path << cell
+	println("added to path: $cell.x $cell.y")
+	println("parent: $cell.parent.x $cell.parent.y")
 	if cell.parent != unsafe { nil } {
-		path_tracer(*cell.parent, mut grid)
+		path_tracer(cell.parent, mut grid)
 	}
 }
 
@@ -58,11 +64,12 @@ fn dijkstra (app App, mut grid Grid) {
 	for mut neighbour in grid.get_neighbours(grid.curr.x, grid.curr.y) {
 		neighbour.distance = min(neighbour.distance, grid.curr.distance + 1)
 		neighbour.parent = &grid.curr
+		grid.cells[neighbour.y][neighbour.x] = neighbour
 	}
-	grid.curr.visited = true
-	grid.curr = grid.get_nearest()
+	grid.cells[grid.curr.y][grid.curr.x].visited = true
 	grid.visited << grid.curr
-	if grid.curr.x == grid.end_cell[0] && grid.curr.y == grid.end_cell[1] {
+	grid.curr = grid.get_nearest()
+	if grid.curr == grid.get_end() {
 		grid.found = true
 	} else {
 		app.display()
@@ -77,7 +84,6 @@ fn frame(mut app App) {
 
 fn click(x f32, y f32, btn gg.MouseButton, mut app App) {
 	if btn == .left {
-		println('click at $x, $y')
 		cell_x := int(x / cell_size)
 		cell_y := int(y / cell_size)
 		app.grid.set_obstacle(cell_x, cell_y)
