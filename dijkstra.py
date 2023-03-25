@@ -48,12 +48,19 @@ def left_click(event):
     graphics()
 
 def right_click():
-    global grid
+    global grid, curr, end, found
     grid = init_grid()
+    curr = grid.get_start()
+    end = grid.get_end()
+    found = False
     graphics()
 
 def init_grid() -> Grid:
+    global curr, end, found
     g = Grid(GRID_WIDTH, GRID_HEIGHT)
+    curr = g.get_start()
+    end = g.get_end()
+    found = False
     return g
 
 def solver():
