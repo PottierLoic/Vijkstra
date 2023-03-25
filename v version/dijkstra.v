@@ -2,6 +2,7 @@ module main
 
 import gg
 import gx
+import time
 
 const (
 	background_color = gx.black
@@ -26,8 +27,8 @@ fn (app App) display () {
 			}
 		}
 	}
-
 	for visited in app.grid.visited {
+		print(visited)
 		app.gg.draw_rect_filled(visited.x * cell_size, visited.y * cell_size, cell_size, cell_size, gx.blue)
 	}
 
@@ -42,6 +43,7 @@ fn (app App) display () {
 fn (mut app App)solver(){
 	if app.grid.found != true {
 		dijkstra(app, mut app.grid)
+		time.sleep(1000 * time.millisecond)
 		app.solver()
 	} else {
 		print('trouvé')
@@ -63,16 +65,17 @@ fn dijkstra (app App, mut grid Grid) {
 	println('dijkstra')
 	for mut neighbour in grid.get_neighbours(grid.curr.x, grid.curr.y) {
 		neighbour.distance = min(neighbour.distance, grid.curr.distance + 1)
-		neighbour.parent = &grid.curr
+		neighbour.parent = &grid.cells[grid.curr.y][grid.curr.x]
 		grid.cells[neighbour.y][neighbour.x] = neighbour
 	}
 	grid.cells[grid.curr.y][grid.curr.x].visited = true
-	grid.visited << grid.curr
+	grid.visited << grid.cells[grid.curr.y][grid.curr.x]
 	grid.curr = grid.get_nearest()
 	if grid.curr == grid.get_end() {
 		grid.found = true
 	} else {
 		app.display()
+		print("ouep")
 	}
 }
 
