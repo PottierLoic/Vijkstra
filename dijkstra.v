@@ -5,14 +5,17 @@ import gx
 import time
 
 const (
-	background_color = gx.black
+	background_color = gx.rgb(243, 243, 243)
+	background_color2 = gx.rgb(213, 213, 213)
 	start_color = gx.green
 	end_color = gx.red
-	visited_color = gx.blue
+	visited_color = gx.rgb(204, 255, 255)
 	path_color = gx.yellow
+	obstacle_color = gx.rgb(0, 25, 51)
 	grid_height = 20
 	grid_width = 20
-	cell_size = 20
+	cell_size = 40
+	circle_size = int(cell_size/3)
 	screen_width = grid_width * cell_size
 	screen_height = grid_height * cell_size
 )
@@ -26,23 +29,43 @@ struct App {
 }
 
 fn (app App) display () {
+	mut odd := 0
 	for i in 0 .. grid_height {
 		for j in 0 .. grid_width {
+			if odd == 0 {
+				app.gg.draw_rect_filled(j * cell_size, i * cell_size, cell_size, cell_size, background_color)
+				odd = 1
+			} else {
+				app.gg.draw_rect_filled(j * cell_size, i * cell_size, cell_size, cell_size, background_color2)
+				odd = 0
+			}
 			if app.grid.cells[i][j].cat == 'obstacle' {
-				app.gg.draw_rect_filled(j * cell_size, i * cell_size, cell_size, cell_size, gx.gray)
+				app.gg.draw_rect_filled(j * cell_size, i * cell_size, cell_size, cell_size, obstacle_color)
+			}
+		}
+		if grid_width % 2 == 0 {
+			if odd == 0 {
+				odd = 1
+			} else {
+				odd = 0
 			}
 		}
 	}
 	for visited in app.grid.visited {
-		app.gg.draw_rect_filled(visited.x * cell_size, visited.y * cell_size, cell_size, cell_size, visited_color)
+		if visited.x == app.grid.start_cell[0] && visited.y == app.grid.start_cell[1] {
+			continue
+		}
+		app.gg.draw_circle_filled(visited.x * cell_size + cell_size/2, visited.y * cell_size + cell_size/2, circle_size, visited_color)
 	}
 
 	for path in app.grid.path {
-		app.gg.draw_rect_filled(path.x * cell_size, path.y * cell_size, cell_size, cell_size, path_color)
+		app.gg.draw_circle_filled(path.x * cell_size + cell_size/2, path.y * cell_size + cell_size/2, circle_size, path_color)
 	}
 
-	app.gg.draw_rect_filled(app.grid.start_cell[0] * cell_size, app.grid.start_cell[1] * cell_size, cell_size, cell_size, start_color)
-	app.gg.draw_rect_filled(app.grid.end_cell[0] * cell_size, app.grid.end_cell[1] * cell_size, cell_size, cell_size, end_color)
+
+	app.gg.draw_polygon_filled(app.grid.start_cell[0] * cell_size + cell_size/2, app.grid.start_cell[1] * cell_size + cell_size/2, circle_size, 3, 0, start_color)
+	//app.gg.draw_rect_filled(app.grid.start_cell[0] * cell_size, app.grid.start_cell[1] * cell_size, cell_size, cell_size, start_color)
+	app.gg.draw_circle_filled(app.grid.end_cell[0] * cell_size + cell_size/2, app.grid.end_cell[1] * cell_size + cell_size/2, circle_size, end_color)
 }
 
 fn (mut app App)solver(){

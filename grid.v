@@ -28,6 +28,9 @@ fn (grid Grid) get_cell(x int, y int) Cell {
 }
 
 fn (mut grid Grid) set_obstacle(x int, y int) {
+	if x < 0 || x >= grid.cells[0].len || y < 0 || y >= grid.cells.len {
+		return
+	}
 	if [x, y] == grid.start_cell || [x, y] == grid.end_cell {
 		return
 	}
