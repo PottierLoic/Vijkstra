@@ -16,8 +16,15 @@ const (
 	grid_width        = 20
 	cell_size         = 30
 	circle_size       = int(cell_size / 3)
-	screen_width      = grid_width * cell_size
+	menu_size 		  = 300
+	screen_width      = grid_width * cell_size + menu_size
 	screen_height     = grid_height * cell_size
+	text_config       = gx.TextCfg{
+		color: gx.white
+		size: 20
+		align: .center
+		vertical_align: .middle
+	}
 )
 
 struct App {
@@ -82,6 +89,28 @@ fn (mut app App) display() {
 		}
 		app.anim_timer = time.new_stopwatch()
 	}
+
+	// Menu
+	app.gg.draw_rect_filled(grid_width * cell_size, 0, 300, screen_height, gx.rgb(0, 25, 51))
+	
+	// Title
+	app.gg.draw_rect_filled(grid_width * cell_size + 50, 50, 200, 50, gx.rgb(0, 51, 102))
+	app.gg.draw_text(grid_width * cell_size + menu_size / 2, 75, 'Maze Solver', text_config)
+
+	// Solve button
+	app.gg.draw_rect_filled(grid_width * cell_size + 50, 150, 200, 50, gx.rgb(0, 51, 102))
+	app.gg.draw_rect_empty(grid_width * cell_size + 50, 150, 200, 50, gx.gray)
+	if app.solving {
+		app.gg.draw_text(grid_width * cell_size + menu_size / 2, 175, 'Pause', text_config)
+	} else {
+		app.gg.draw_text(grid_width * cell_size + menu_size / 2, 175, 'Solve', text_config)
+	}
+
+	// Reset button
+	app.gg.draw_rect_filled(grid_width * cell_size + 50, 250, 200, 50, gx.rgb(0, 51, 102))
+	app.gg.draw_rect_empty(grid_width * cell_size + 50, 250, 200, 50, gx.gray)
+	app.gg.draw_text(grid_width * cell_size + menu_size / 2, 275, 'Reset', text_config)
+
 }
 
 fn (mut app App) solver() {
@@ -136,11 +165,21 @@ fn click(x f32, y f32, btn gg.MouseButton, mut app App) {
 	if btn == .left {
 		cell_x := int(x / cell_size)
 		cell_y := int(y / cell_size)
-		app.grid.set_obstacle(cell_x, cell_y)
-	} else if btn == .right {
-		app.grid = init_grid(grid_width, grid_height)
-		app.solving = false
-		app.path_found = false
+
+		// check if clicked on button
+		if x > grid_width * cell_size + 50 && x < grid_width * cell_size + 250 && y > 150 && y < 200 {
+			if app.solving == false {
+				app.solving = true
+			} else {
+				app.solving = false
+			}
+		} else if x > grid_width * cell_size + 50 && x < grid_width * cell_size + 250 && y > 250 && y < 300 {
+			app.grid = init_grid(grid_width, grid_height)
+			app.solving = false
+			app.path_found = false
+		} else {
+			app.grid.set_obstacle(cell_x, cell_y)
+		}
 	}
 }
 
