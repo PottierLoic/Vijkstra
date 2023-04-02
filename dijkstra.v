@@ -5,42 +5,45 @@ import gx
 import time
 
 const (
-	background_color = gx.rgb(243, 243, 243)
+	background_color  = gx.rgb(243, 243, 243)
 	background_color2 = gx.rgb(213, 213, 213)
-	start_color = gx.green
-	end_color = gx.red
-	visited_color = gx.rgb(204, 255, 255)
-	path_color = gx.yellow
-	obstacle_color = gx.rgb(0, 25, 51)
-	grid_height = 20
-	grid_width = 20
-	cell_size = 40
-	circle_size = int(cell_size/3)
-	screen_width = grid_width * cell_size
-	screen_height = grid_height * cell_size
+	start_color       = gx.green
+	end_color         = gx.red
+	visited_color     = gx.rgb(102, 178, 255)
+	path_color        = gx.yellow
+	obstacle_color    = gx.rgb(0, 25, 51)
+	grid_height       = 20
+	grid_width        = 20
+	cell_size         = 30
+	circle_size       = int(cell_size / 3)
+	screen_width      = grid_width * cell_size
+	screen_height     = grid_height * cell_size
 )
 
 struct App {
-	mut:
-		gg &gg.Context = unsafe { nil }
-		grid Grid
-		solving bool
-		path_drawn bool
+mut:
+	gg         &gg.Context = unsafe { nil }
+	grid       Grid
+	solving    bool
+	path_found bool
+	path_drawn bool
+	draw_timer time.StopWatch
+	anim_timer time.StopWatch = time.new_stopwatch()
 }
 
-fn (app App) display () {
+fn (mut app App) display() {
 	mut odd := 0
 	for i in 0 .. grid_height {
 		for j in 0 .. grid_width {
 			if odd == 0 {
-				app.gg.draw_rect_filled(j * cell_size, i * cell_size, cell_size, cell_size, background_color)
+				app.gg.draw_rect_filled(j * cell_size, i * cell_size, cell_size, cell_size,	background_color)
 				odd = 1
 			} else {
-				app.gg.draw_rect_filled(j * cell_size, i * cell_size, cell_size, cell_size, background_color2)
+				app.gg.draw_rect_filled(j * cell_size, i * cell_size, cell_size, cell_size,	background_color2)
 				odd = 0
 			}
 			if app.grid.cells[i][j].cat == 'obstacle' {
-				app.gg.draw_rect_filled(j * cell_size, i * cell_size, cell_size, cell_size, obstacle_color)
+				app.gg.draw_rect_filled(j * cell_size, i * cell_size, cell_size, cell_size,	obstacle_color)
 			}
 		}
 		if grid_width % 2 == 0 {
@@ -51,29 +54,43 @@ fn (app App) display () {
 			}
 		}
 	}
+
 	for visited in app.grid.visited {
 		if visited.x == app.grid.start_cell[0] && visited.y == app.grid.start_cell[1] {
 			continue
 		}
-		app.gg.draw_circle_filled(visited.x * cell_size + cell_size/2, visited.y * cell_size + cell_size/2, circle_size, visited_color)
+		app.gg.draw_circle_filled(visited.x * cell_size + cell_size / 2, visited.y * cell_size + cell_size / 2, visited.size, visited_color)
 	}
 
-	for path in app.grid.path {
-		app.gg.draw_circle_filled(path.x * cell_size + cell_size/2, path.y * cell_size + cell_size/2, circle_size, path_color)
+	for path in app.grid.path_to_draw {
+		app.gg.draw_circle_filled(path.x * cell_size + cell_size / 2, path.y * cell_size + cell_size / 2, path.size, path_color)
 	}
 
+	app.gg.draw_polygon_filled(app.grid.start_cell[0] * cell_size + cell_size / 2, app.grid.start_cell[1] * cell_size + cell_size / 2, circle_size, 3, 0, start_color)
+	app.gg.draw_circle_filled(app.grid.end_cell[0] * cell_size + cell_size / 2, app.grid.end_cell[1] * cell_size + cell_size / 2, circle_size, end_color)
 
-	app.gg.draw_polygon_filled(app.grid.start_cell[0] * cell_size + cell_size/2, app.grid.start_cell[1] * cell_size + cell_size/2, circle_size, 3, 0, start_color)
-	//app.gg.draw_rect_filled(app.grid.start_cell[0] * cell_size, app.grid.start_cell[1] * cell_size, cell_size, cell_size, start_color)
-	app.gg.draw_circle_filled(app.grid.end_cell[0] * cell_size + cell_size/2, app.grid.end_cell[1] * cell_size + cell_size/2, circle_size, end_color)
+	if app.anim_timer.elapsed().milliseconds() > 10 {
+		for mut cell in app.grid.visited {
+			if cell.size != circle_size {
+				cell.increase_size()
+			}
+		}
+		for mut cell in app.grid.path_to_draw {
+			if cell.size != circle_size {
+				cell.increase_size()
+			}
+		}
+		app.anim_timer = time.new_stopwatch()
+	}
 }
 
-fn (mut app App)solver(){
+fn (mut app App) solver() {
 	if app.grid.found != true {
 		dijkstra(app, mut app.grid)
-	} else if app.path_drawn != true {
+	} else if app.path_found != true {
 		path_tracer(app.grid.get_end(), mut app.grid)
-		app.path_drawn = true
+		app.path_found = true
+		app.draw_timer = time.new_stopwatch()
 	}
 }
 
@@ -81,10 +98,10 @@ fn path_tracer(cell Cell, mut grid Grid) {
 	grid.path << cell
 	if grid.get_cell(cell.parent.x, cell.parent.y) != grid.get_start() {
 		path_tracer(cell.parent, mut grid)
-	} 
+	}
 }
 
-fn dijkstra (app App, mut grid Grid) {
+fn dijkstra(app App, mut grid Grid) {
 	for mut neighbour in grid.get_neighbours(grid.curr.x, grid.curr.y) {
 		neighbour.distance = min(neighbour.distance, grid.curr.distance + 1)
 		neighbour.parent = &grid.cells[grid.curr.y][grid.curr.x]
@@ -103,6 +120,14 @@ fn frame(mut app App) {
 	if app.solving {
 		app.solver()
 	}
+	if app.path_found {
+		if app.grid.path_to_draw.len == app.grid.path.len {
+			app.path_drawn = true
+		} else if app.draw_timer.elapsed().milliseconds() > 25 {
+			app.grid.path_to_draw << app.grid.path[app.grid.path.len - app.grid.path_to_draw.len - 1]
+			app.draw_timer = time.new_stopwatch()
+		}
+	}
 	app.display()
 	app.gg.end()
 }
@@ -115,7 +140,7 @@ fn click(x f32, y f32, btn gg.MouseButton, mut app App) {
 	} else if btn == .right {
 		app.grid = init_grid(grid_width, grid_height)
 		app.solving = false
-		app.path_drawn = false
+		app.path_found = false
 	}
 }
 
@@ -137,11 +162,9 @@ fn min(a int, b int) int {
 }
 
 fn main() {
-	mut app := App {
+	mut app := App{
 		gg: 0
 		grid: init_grid(grid_width, grid_height)
-		solving: false
-		path_drawn: false
 	}
 	app.gg = gg.new_context(
 		bg_color: background_color

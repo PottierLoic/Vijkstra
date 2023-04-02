@@ -3,16 +3,17 @@ module main
 import rand
 
 struct Grid {
-	mut:
-		cells [][]Cell
-		start_cell []int
-		end_cell []int
-		visited []Cell
-		path []Cell
+mut:
+	cells        [][]Cell
+	start_cell   []int
+	end_cell     []int
+	visited      []Cell
+	path         []Cell
+	path_to_draw []Cell
 
-		curr Cell
-		end Cell
-		found bool
+	curr  Cell
+	end   Cell
+	found bool
 }
 
 fn (grid Grid) get_start() Cell {
@@ -44,29 +45,29 @@ fn (mut grid Grid) set_obstacle(x int, y int) {
 fn (grid Grid) get_neighbours(x int, y int) []Cell {
 	mut neighbours := []Cell{}
 	if x > 0 {
-		if grid.cells[y][x-1].cat != 'obstacle' && grid.cells[y][x-1].visited == false {
-			neighbours << grid.cells[y][x-1]
+		if grid.cells[y][x - 1].cat != 'obstacle' && grid.cells[y][x - 1].visited == false {
+			neighbours << grid.cells[y][x - 1]
 		}
 	}
 	if x < grid.cells[0].len - 1 {
-		if grid.cells[y][x+1].cat != 'obstacle' && grid.cells[y][x+1].visited == false {
-			neighbours << grid.cells[y][x+1]
+		if grid.cells[y][x + 1].cat != 'obstacle' && grid.cells[y][x + 1].visited == false {
+			neighbours << grid.cells[y][x + 1]
 		}
 	}
 	if y > 0 {
-		if grid.cells[y-1][x].cat != 'obstacle' && grid.cells[y-1][x].visited == false {
-			neighbours << grid.cells[y-1][x]
+		if grid.cells[y - 1][x].cat != 'obstacle' && grid.cells[y - 1][x].visited == false {
+			neighbours << grid.cells[y - 1][x]
 		}
 	}
 	if y < grid.cells.len - 1 {
-		if grid.cells[y+1][x].cat != 'obstacle' && grid.cells[y+1][x].visited == false {
-			neighbours << grid.cells[y+1][x]
+		if grid.cells[y + 1][x].cat != 'obstacle' && grid.cells[y + 1][x].visited == false {
+			neighbours << grid.cells[y + 1][x]
 		}
 	}
 	return neighbours
 }
 
-fn (grid Grid) print_grid () {
+fn (grid Grid) print_grid() {
 	for i := 0; i < grid.cells.len; i++ {
 		for j := 0; j < grid.cells[i].len; j++ {
 			if grid.cells[i][j].cat == 'cell' {
@@ -75,11 +76,11 @@ fn (grid Grid) print_grid () {
 				print('X')
 			}
 		}
-		println("")
+		println('')
 	}
 }
 
-fn (grid Grid) get_nearest () Cell {
+fn (grid Grid) get_nearest() Cell {
 	mut min := 1000
 	mut nearest := grid.cells[0][0]
 	for i := 0; i < grid.cells.len; i++ {
@@ -97,9 +98,10 @@ fn init_grid(width int, height int) Grid {
 	mut cells := [][]Cell{}
 	mut visited := []Cell{}
 	mut path := []Cell{}
+	mut path_to_draw := []Cell{}
 	mut start_cell := [rand.intn(width) or { 0 }, rand.intn(height) or { 0 }]
 	mut end_cell := [rand.intn(width) or { 0 }, rand.intn(height) or { 0 }]
-	
+
 	for i := 0; i < height; i++ {
 		mut row := []Cell{}
 		for j := 0; j < width; j++ {
@@ -115,12 +117,10 @@ fn init_grid(width int, height int) Grid {
 		cells: cells
 		visited: visited
 		path: path
+		path_to_draw: path_to_draw
 		start_cell: start_cell
 		end_cell: end_cell
 		curr: curr
 		end: end
 	}
 }
-
-
-
