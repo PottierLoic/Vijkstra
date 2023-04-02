@@ -12,13 +12,18 @@ const (
 	visited_color     = gx.rgb(102, 178, 255)
 	path_color        = gx.yellow
 	obstacle_color    = gx.rgb(0, 25, 51)
-	grid_height       = 20
-	grid_width        = 20
-	cell_size         = 30
+
+	screen_width      = 1080
+	screen_height     = 720
+
+	grid_height       = 10
+	grid_width        = 10
+	
+	cell_size         = int(720/grid_height)
+
+	menu_size 		  = screen_width - (grid_width * cell_size)
+
 	circle_size       = int(cell_size / 3)
-	menu_size 		  = 300
-	screen_width      = grid_width * cell_size + menu_size
-	screen_height     = grid_height * cell_size
 	text_config       = gx.TextCfg{
 		color: gx.white
 		size: 20
@@ -40,6 +45,8 @@ mut:
 
 fn (mut app App) display() {
 	mut odd := 0
+
+	// Draw background and obstacles
 	for i in 0 .. grid_height {
 		for j in 0 .. grid_width {
 			if odd == 0 {
@@ -62,6 +69,7 @@ fn (mut app App) display() {
 		}
 	}
 
+	// Draw visited cells
 	for visited in app.grid.visited {
 		if visited.x == app.grid.start_cell[0] && visited.y == app.grid.start_cell[1] {
 			continue
@@ -69,10 +77,12 @@ fn (mut app App) display() {
 		app.gg.draw_circle_filled(visited.x * cell_size + cell_size / 2, visited.y * cell_size + cell_size / 2, visited.size, visited_color)
 	}
 
+	// Draw path
 	for path in app.grid.path_to_draw {
 		app.gg.draw_circle_filled(path.x * cell_size + cell_size / 2, path.y * cell_size + cell_size / 2, path.size, path_color)
 	}
 
+	// Draw start and end cells
 	app.gg.draw_polygon_filled(app.grid.start_cell[0] * cell_size + cell_size / 2, app.grid.start_cell[1] * cell_size + cell_size / 2, circle_size, 3, 0, start_color)
 	app.gg.draw_circle_filled(app.grid.end_cell[0] * cell_size + cell_size / 2, app.grid.end_cell[1] * cell_size + cell_size / 2, circle_size, end_color)
 
@@ -90,25 +100,25 @@ fn (mut app App) display() {
 		app.anim_timer = time.new_stopwatch()
 	}
 
-	// Menu
-	app.gg.draw_rect_filled(grid_width * cell_size, 0, 300, screen_height, gx.rgb(0, 25, 51))
+	// Draw menu
+	app.gg.draw_rect_filled(grid_width * cell_size, 0, menu_size, screen_height, gx.rgb(0, 25, 51))
 	
-	// Title
-	app.gg.draw_rect_filled(grid_width * cell_size + 50, 50, 200, 50, gx.rgb(0, 51, 102))
+	// Draw title
+	app.gg.draw_rect_filled(grid_width * cell_size + menu_size/6, 50, menu_size-menu_size/3, 50, gx.rgb(0, 51, 102))
 	app.gg.draw_text(grid_width * cell_size + menu_size / 2, 75, 'Maze Solver', text_config)
 
-	// Solve button
-	app.gg.draw_rect_filled(grid_width * cell_size + 50, 150, 200, 50, gx.rgb(0, 51, 102))
-	app.gg.draw_rect_empty(grid_width * cell_size + 50, 150, 200, 50, gx.gray)
+	// Draw solve button
+	app.gg.draw_rect_filled(grid_width * cell_size + menu_size/6, 150, menu_size-menu_size/3, 50, gx.rgb(0, 51, 102))
+	app.gg.draw_rect_empty(grid_width * cell_size + menu_size/6, 150, menu_size-menu_size/3, 50, gx.gray)
 	if app.solving {
 		app.gg.draw_text(grid_width * cell_size + menu_size / 2, 175, 'Pause', text_config)
 	} else {
 		app.gg.draw_text(grid_width * cell_size + menu_size / 2, 175, 'Solve', text_config)
 	}
 
-	// Reset button
-	app.gg.draw_rect_filled(grid_width * cell_size + 50, 250, 200, 50, gx.rgb(0, 51, 102))
-	app.gg.draw_rect_empty(grid_width * cell_size + 50, 250, 200, 50, gx.gray)
+	// Draw reset button
+	app.gg.draw_rect_filled(grid_width * cell_size + menu_size/6, 250, menu_size-menu_size/3, 50, gx.rgb(0, 51, 102))
+	app.gg.draw_rect_empty(grid_width * cell_size + menu_size/6, 250, menu_size-menu_size/3, 50, gx.gray)
 	app.gg.draw_text(grid_width * cell_size + menu_size / 2, 275, 'Reset', text_config)
 
 }
